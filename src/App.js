@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
-import SoundBoard from './helpers/SoundBoard';
+// import SoundBoard from './helpers/SoundBoard';
 
 function getClue() {
   return fetch('https://jservice-wj5n.onrender.com/api/random');
@@ -50,7 +50,7 @@ function App() {
   const [gameState, setGameState] = useState(START);
   const [cluesAnswered, setCluesAnswered] = useState([]);
 
-  const soundBoard = SoundBoard(window.speechSynthesis);
+  // const soundBoard = SoundBoard(window.speechSynthesis);
 
   const addClueAnswered = (question, answer, category, value, userAnswer, isCorrect) => {
     setCluesAnswered([...cluesAnswered, {
@@ -98,7 +98,7 @@ function App() {
 
         console.log('playing speech')
         console.log(`${generatedClue.category.title} for ${generatedClue.value}. ${generatedClue.question}`);
-        soundBoard.playSpeech(`${generatedClue.category.title} for ${generatedClue.value}. ${generatedClue.question}`);
+        // soundBoard.playSpeech(`${generatedClue.category.title} for ${generatedClue.value}. ${generatedClue.question}`);
         setMessage(`"${generatedClue.category.title}" for ${generatedClue.value}...`)
       });
     });
@@ -111,11 +111,11 @@ function App() {
   const handleGuess = () => {
     setGameState(GUESSED);
     if (isAnswerCorrect()) {
-      soundBoard.playSound('right');
+      // soundBoard.playSound('right');
       addClueAnswered(clue.question, clue.answer, clue.category, clue.value, guess, true);
       setMessage("Right!")
     } else {
-      soundBoard.playSound('wrong');
+      // soundBoard.playSound('wrong');
       addClueAnswered(clue.question, clue.answer, clue.category, clue.value, guess, false);
       toggleShowAnswer();
       setMessage("Wrong!")
@@ -124,7 +124,7 @@ function App() {
 
   const handleCorrectOverride = () => {
     if (!isAnswerCorrect()) {
-      soundBoard.playSound('right');
+      // soundBoard.playSound('right');
       setMessage("Incorrectly marked as wrong... points added back to your score!")
       setLastClueAnsweredCorrectly();
     }
