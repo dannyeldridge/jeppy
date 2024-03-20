@@ -3,7 +3,7 @@ import './App.css';
 // import SoundBoard from './helpers/SoundBoard';
 
 function getClue() {
-  return fetch('https://jservice-wj5n.onrender.com/api/random');
+  return fetch('https://jserviceflask.onrender.com/random/');
 }
 
 function JeopardyCard(props) {
