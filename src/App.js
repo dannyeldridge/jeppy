@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 // import SoundBoard from './helpers/SoundBoard';
 
-function getClue() {
-  return fetch('https://jserviceflask.onrender.com/random/');
+function getDailyClues() {
+  return fetch('https://jserviceflask.onrender.com/daily-clues').then(response => response.json());
 }
 
 function JeopardyCard(props) {
@@ -36,6 +36,15 @@ function App() {
   const GUESSED = 2;
   const SUMMARY = 3;
 
+  const [dailyClues, setDailyClues] = useState([]);
+  const [clueIndex, setClueIndex] = useState(0);
+
+  useEffect(() => {
+    getDailyClues().then((clues) => {
+      setDailyClues(clues);
+    });
+  }, []);
+
   const [clue, setClue] = useState({
     question: "...",
     answer: "...",
@@ -49,8 +58,6 @@ function App() {
   const [message, setMessage] = useState('Welcome to Jeopardy! Here are your clues for today...');
   const [gameState, setGameState] = useState(START);
   const [cluesAnswered, setCluesAnswered] = useState([]);
-
-  // const soundBoard = SoundBoard(window.speechSynthesis);
 
   const addClueAnswered = (question, answer, category, value, userAnswer, isCorrect) => {
     setCluesAnswered([...cluesAnswered, {
@@ -77,31 +84,21 @@ function App() {
     }
 
     setGameState(QUESTION);
-    getClue().then((clue) => {
-      clue.json().then((response) => {
-        const generatedClue = response[0];
-        console.log(generatedClue);
-
-        if(!generatedClue.value) {
-          nextClue();
-          return;
-        }
-
-        setClue({
-          question: generatedClue.question,
-          answer: generatedClue.answer,
-          category: generatedClue.category.title,
-          value: generatedClue.value || 0,
-          showAnswer: false,
-          airDate: new Date(generatedClue.airdate).getFullYear()
-        })
-
-        console.log('playing speech')
-        console.log(`${generatedClue.category.title} for ${generatedClue.value}. ${generatedClue.question}`);
-        // soundBoard.playSpeech(`${generatedClue.category.title} for ${generatedClue.value}. ${generatedClue.question}`);
-        setMessage(`"${generatedClue.category.title}" for ${generatedClue.value}...`)
-      });
+    const currentClue = dailyClues[clueIndex];
+    console.log(currentClue);
+    setClue({
+      question: currentClue.question,
+      answer: currentClue.answer,
+      category: currentClue.category.title,
+      value: currentClue.value || 0,
+      showAnswer: false,
+      airDate: new Date(currentClue.airdate).getFullYear()
     });
+
+    setClueIndex(clueIndex + 1);
+
+    console.log(`${clue.category.title} for ${clue.value}. ${clue.question}`);
+    setMessage(`"${clue.category.title}" for ${clue.value}...`)
   }
 
   const initializeClue = () => {
