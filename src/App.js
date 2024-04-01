@@ -96,9 +96,7 @@ function App() {
     });
 
     setClueIndex(clueIndex + 1);
-
-    console.log(`${clue.category.title} for ${clue.value}. ${clue.question}`);
-    setMessage(`"${clue.category.title}" for ${clue.value}...`)
+    setMessage(`"${currentClue.category.title}" for ${currentClue.value}...`)
   }
 
   const initializeClue = () => {
