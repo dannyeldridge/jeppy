@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import Confetti from 'react-confetti';
+import greg from './img/greg.png';
 // import SoundBoard from './helpers/SoundBoard';
 
 function getDailyClues() {
@@ -22,7 +24,7 @@ function JeopardyCard(props) {
         <div style={{"font-size": "2em", "text-shadow": "2px 2px 0px black", "font-weight": "bold"}}>{category.toUpperCase()} ({value})</div>
         <div style={{"font-size": "1em", "text-shadow": "2px 2px 0px black", "font-style": "italic"}}>{`AIRED IN ${airDate}`}</div>
       </div>
-      <div className="Jeopardy-box flex-box-column" style={{"height": "18em", "overflow-y": "auto"}}>
+      <div className="Jeopardy-box flex-box-column" style={{"min-height": "18em", "overflow-y": "auto"}}>
         <div style={{"font-size": "2em", "padding": "0.5em"}}>{showAnswer ? answer : question}</div>
       </div>
     </div>
@@ -55,9 +57,10 @@ function App() {
   });
 
   const [guess, setGuess] = useState('');
-  const [message, setMessage] = useState('Welcome to Jeopardy! Here are your clues for today...');
+  const [message, setMessage] = useState('');
   const [gameState, setGameState] = useState(START);
   const [cluesAnswered, setCluesAnswered] = useState([]);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const addClueAnswered = (question, answer, category, value, userAnswer, isCorrect) => {
     setCluesAnswered([...cluesAnswered, {
@@ -74,6 +77,10 @@ function App() {
     const newCluesAnswered = cluesAnswered;
     newCluesAnswered[cluesAnswered.length - 1]['isCorrect'] = true;
     setCluesAnswered(newCluesAnswered);
+  }
+
+  const currentScore = () => {
+    return cluesAnswered.reduce((total, clueAnswered) => (clueAnswered.isCorrect ? total + clueAnswered.value : total - clueAnswered.value), 0);
   }
 
   const nextClue = () => {
@@ -96,7 +103,8 @@ function App() {
     });
 
     setClueIndex(clueIndex + 1);
-    setMessage(`"${currentClue.category.title}" for ${currentClue.value}...`)
+    setMessage("");
+    setShowConfetti(false);
   }
 
   const initializeClue = () => {
@@ -108,7 +116,9 @@ function App() {
     if (isAnswerCorrect()) {
       // soundBoard.playSound('right');
       addClueAnswered(clue.question, clue.answer, clue.category, clue.value, guess, true);
+      toggleShowAnswer();
       setMessage("Right!")
+      setShowConfetti(true);
     } else {
       // soundBoard.playSound('wrong');
       addClueAnswered(clue.question, clue.answer, clue.category, clue.value, guess, false);
@@ -120,8 +130,9 @@ function App() {
   const handleCorrectOverride = () => {
     if (!isAnswerCorrect()) {
       // soundBoard.playSound('right');
-      setMessage("Incorrectly marked as wrong... points added back to your score!")
+      setMessage(`My bad, you were right... $${clue.value} added to your score!`)
       setLastClueAnsweredCorrectly();
+      setShowConfetti(true);
     }
   }
 
@@ -152,15 +163,17 @@ function App() {
             </form>
           </div>
           <div>
-            <button className='btn btn-outline-danger btn-sm mr-2' type="button" onClick={toggleShowAnswer}>
-              {
-                !clue.showAnswer ? "Show Answer" : "Show Question"
-              }
-            </button>
+            {
+              gameState === GUESSED &&
+              <button className='btn btn-outline-danger btn-sm mr-2' type="button" onClick={toggleShowAnswer}>
+                {
+                  !clue.showAnswer ? "Show Answer" : "Show Question"
+                }
+              </button>
+            }
             <span>
-              {gameState === QUESTION
-                ? <button className='btn btn-outline-warning btn-sm' type="button" onClick={nextClue}>Skip Clue</button>
-                : <button onClick={handleCorrectOverride} className='btn btn-outline-secondary btn-sm' >I was right!</button>
+              {gameState !== QUESTION &&
+                <button onClick={handleCorrectOverride} className='btn btn-outline-secondary btn-sm' >I was right!</button>
               }
             </span>
           </div>
@@ -169,13 +182,18 @@ function App() {
           </div>
           <div>
             <p className='mt-4 h4'>
-              { 'You have: ' }
+              { cluesAnswered.length === 0 ? 'Good luck!' : `Your score: $${currentScore()}`}
+              <br />
               { cluesAnswered.filter((clueAnswered) => clueAnswered.isCorrect).length }
-              { ' right, out of ' }
+              { ' right out of ' }
               { cluesAnswered.length }
-              { ' answered.' }
+              { ' answered' }
             </p>
           </div>
+          { showConfetti && <Confetti 
+            width={window.innerWidth}
+            height={window.innerHeight}
+          /> }
         </div>
     );
   }
@@ -191,9 +209,15 @@ function App() {
           { cluesAnswered.length }
           { ' clues' }
         </p>
+        { cluesAnswered.filter((cluesAnswered) => cluesAnswered.isCorrect).length === 6 &&
+        <p>
+          <img src={greg} alt="greg" className="greg-image" />
+          <p>Greg says: "You did it! You won Jeopardy!"</p>
+        </p>
+        }
         <p>
           { 'On the show you would have made $' }
-          { cluesAnswered.reduce((total, clueAnswered) => (clueAnswered.isCorrect ? total + clueAnswered.value : total - clueAnswered.value), 0) }
+          { currentScore() }
         </p>
         <table class="table-dark table-bordered table-hover">
           <thead>
@@ -201,6 +225,7 @@ function App() {
               <th scope="col">#</th>
               <th scope="col">Question</th>
               <th scope="col">Answer</th>
+              <th scope="col"></th>
               <th scope="col">Clue Value</th>
             </tr>
           </thead>
@@ -210,6 +235,7 @@ function App() {
               <th scope="row">{index + 1}</th>
               <td>{clueAnswered.question}</td>
               <td>{clueAnswered.answer}</td>
+              <td>{clueAnswered.isCorrect ? "✓" : "✗"}</td>
               <td>{clueAnswered.value}</td>
             </tr>
           ))}
@@ -233,9 +259,9 @@ function App() {
   }
 
   const routeView = (state) => {
-    if (state == START) {
+    if (state === START) {
       return startView();
-    } else if (state == SUMMARY) {
+    } else if (state === SUMMARY) {
       return summaryView();
     } else {
       return gameView();
