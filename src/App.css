@@ -57,8 +57,13 @@
 
 .Jeopardy-box {
  background-color: darkblue;
- width: 30em;
- height: 10em;
+ min-width: 30em;
+ max-width: 50em;
  border: 0.5em solid blue;
  border-style: outset;
+}
+
+.greg-image {
+  width: 20%;
+  height: auto;
 }
