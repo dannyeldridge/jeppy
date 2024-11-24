@@ -5,7 +5,8 @@ import greg from './img/greg.png';
 // import SoundBoard from './helpers/SoundBoard';
 
 function getDailyClues() {
-  return fetch('https://jserviceflask.onrender.com/daily-clues').then(response => response.json());
+  const endpoint = process.env.REACT_APP_API_ENDPOINT;
+  return fetch(endpoint).then(response => response.json());
 }
 
 function JeopardyCard(props) {
