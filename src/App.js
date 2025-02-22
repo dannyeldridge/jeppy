@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import Confetti from 'react-confetti';
 import greg from './img/greg.png';
-// import SoundBoard from './helpers/SoundBoard';
 
 function getDailyClues() {
   const endpoint = process.env.REACT_APP_API_ENDPOINT;
@@ -22,11 +21,15 @@ function JeopardyCard(props) {
   return (
     <div>
       <div className="Jeopardy-box flex-box-column" style={{"height": "7em"}}>
-        <div style={{"font-size": "2em", "text-shadow": "2px 2px 0px black", "font-weight": "bold"}}>{category.toUpperCase()} ({value})</div>
-        <div style={{"font-size": "1em", "text-shadow": "2px 2px 0px black", "font-style": "italic"}}>{`AIRED IN ${airDate}`}</div>
+        <div id='category' style={{"font-size": "2em", "text-shadow": "2px 2px 0px black", "font-weight": "bold"}}>{category.toUpperCase()} ({value})</div>
+        <div id='year' style={{"font-size": "1em", "text-shadow": "2px 2px 0px black", "font-style": "italic"}}>{`AIRED IN ${airDate}`}</div>
       </div>
       <div className="Jeopardy-box flex-box-column" style={{"min-height": "18em", "overflow-y": "auto"}}>
-        <div style={{"font-size": "2em", "padding": "0.5em"}}>{showAnswer ? answer : question}</div>
+        {question === "" ? (
+          <div className="score-display">${value}</div>
+        ) : (
+          <div style={{"font-size": "2em", "padding": "0.5em"}}>{showAnswer ? answer : question}</div>
+        )}
       </div>
     </div>
   )
@@ -84,6 +87,10 @@ function App() {
     return cluesAnswered.reduce((total, clueAnswered) => (clueAnswered.isCorrect ? total + clueAnswered.value : total - clueAnswered.value), 0);
   }
 
+  const finalScore = () => {
+    return Math.max(0, currentScore());
+  }
+
   const nextClue = () => {
     setGuess("");
     if (cluesAnswered.length === 6) {
@@ -94,11 +101,12 @@ function App() {
     setGameState(QUESTION);
     const currentClue = dailyClues[clueIndex];
     console.log(currentClue);
+
     setClue({
       question: currentClue.question,
       answer: currentClue.answer,
       category: currentClue.category.title,
-      value: currentClue.value || 0,
+      value: Math.min(currentClue.value || 0, 2000),
       showAnswer: false,
       airDate: new Date(currentClue.airdate).getFullYear()
     });
@@ -208,7 +216,6 @@ function App() {
           { cluesAnswered.filter((cluesAnswered) => cluesAnswered.isCorrect).length }
           { ' correctly, out of today\'s ' }
           { cluesAnswered.length }
-          { ' clues' }
         </p>
         { cluesAnswered.filter((cluesAnswered) => cluesAnswered.isCorrect).length === 6 &&
         <p>
@@ -217,8 +224,8 @@ function App() {
         </p>
         }
         <p>
-          { 'On the show you would have made $' }
-          { currentScore() }
+          { 'Today you won $' }
+          { finalScore() }
         </p>
         <table class="table-dark table-bordered table-hover">
           <thead>
@@ -253,8 +260,8 @@ function App() {
     }
 
     return(
-      <div class="container flex-box-column">
-        <button className='btn btn-primary btn-lg m-4' onClick={start}>Play</button>
+      <div className="fullscreen-background">
+        <button className='btn btn-primary btn-lg m-4' style={{ fontSize: '1.45em', padding: '0.875em 2em' }} onClick={start}>Play</button>
       </div>
     )
   }
@@ -271,9 +278,6 @@ function App() {
 
   return (
     <div className="App flex-box-column" style={{"background-color": "#00003A", "minHeight": "100%"}}>
-      <div className="Jeopardy-title">
-        Jeopardy
-      </div>
       { routeView(gameState) }
     </div>
   );
