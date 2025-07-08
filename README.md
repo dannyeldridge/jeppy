@@ -1,68 +1,112 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Jeppy - Daily Jeopardy Game
 
-## Available Scripts
+A simple daily Jeopardy game that fetches 6 clues and lets you test your knowledge. Built with vanilla JavaScript using an IIFE (Immediately Invoked Function Expression) pattern.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- 🎯 6 daily Jeopardy clues from real episodes
+- 🎮 Interactive gameplay with scoring
+- ✅ Answer validation with override option ("I was right!")
+- 🎊 Confetti animation for correct answers
+- 📊 Final score summary with detailed breakdown
+- 🖼️ Greg congratulations for perfect scores
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## How to Run
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+### Method 1: Python HTTP Server (Recommended)
+```bash
+python3 -m http.server 3000
+```
 
-### `npm test`
+### Method 2: Node.js HTTP Server
+```bash
+npx http-server -p 3000
+```
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Method 3: Any Static File Server
+Since this is pure HTML/JS/CSS, you can serve it with any static file server.
 
-### `npm run build`
+Then open your browser to: `http://localhost:3000`
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## File Structure
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+```
+jeppy/
+├── index.html          # Main HTML file with embedded CSS
+├── app.js              # Complete game logic in IIFE
+├── img/                # Images folder
+│   ├── jeppy.webp     # Welcome screen background
+│   └── greg.png       # Congratulations image
+├── src/               # Original React version (reference)
+└── public/            # React build assets (reference)
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Game Flow
 
-### `npm run eject`
+1. **Start Screen**: Shows welcome background with "Play" button
+2. **Game Screen**: 
+   - Displays Jeopardy card with category, value, and air date
+   - Shows question or answer based on current state
+   - Input field for your answer
+   - Score tracking and progress counter
+3. **Answer Feedback**: 
+   - Shows "Right!" or "Wrong!" with confetti for correct answers
+   - "Show Answer/Question" toggle button
+   - "I was right!" override option
+4. **Summary Screen**: 
+   - Final score calculation (negative scores possible)
+   - Detailed breakdown table
+   - Greg congratulations for perfect scores
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## API Integration
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The app fetches daily clues from:
+```javascript
+const API_ENDPOINT = 'https://jservice.dannyeldridge.com/daily-clues';
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Expected API response format:
+```json
+[
+  {
+    "question": "This is the question text",
+    "answer": "What is the answer?",
+    "category": {
+      "title": "CATEGORY NAME"
+    },
+    "value": 400,
+    "airdate": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Technical Details
 
-## Learn More
+- **No Build Process**: Pure HTML/CSS/JS that runs directly in browsers
+- **No Dependencies**: Only uses Bootstrap CDN for styling
+- **IIFE Pattern**: Self-contained JavaScript module
+- **Responsive Design**: Works on desktop and mobile
+- **Modern JS**: Uses ES6+ features (async/await, template literals, etc.)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Browser Support
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Works in all modern browsers that support:
+- ES6+ JavaScript features
+- CSS3 animations
+- Fetch API
+- Template literals
 
-### Code Splitting
+## Customization
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+To modify the API endpoint, edit the `API_ENDPOINT` constant in `app.js`:
+```javascript
+const API_ENDPOINT = 'your-api-endpoint-here';
+```
 
-### Analyzing the Bundle Size
+## Original React Version
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+The original React implementation is preserved in the `src/` folder for reference. This vanilla version maintains identical functionality while removing all framework dependencies.
 
-### Making a Progressive Web App
+## License
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+This project is for educational purposes. Jeopardy! is a trademark of Sony Pictures Television.

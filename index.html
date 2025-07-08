@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Jeopardy game built with vanilla JavaScript" />
+    <title>Jeppy</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        /* Direct copy of original App.css */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .fullscreen-background {
+            background-image: url('./img/jeppy.webp');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            margin: 0;
+            padding: 0;
+        }
+
+        .fullscreen-background button {
+            width: auto;
+            align-self: center;
+        }
+
+        .App {
+            text-align: center;
+            color: white;
+            min-height: 100vh;
+            height: 100%;
+            background-color: #00003A;
+        }
+
+        #app {
+            height: 100vh;
+        }
+
+        .flex-box-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .flex-box-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .Jeopardy-box {
+            background-color: darkblue;
+            min-width: 30em;
+            max-width: 50em;
+            border: 0.5em solid blue;
+            border-style: outset;
+        }
+
+        .greg-image {
+            width: 20%;
+            height: auto;
+        }
+
+        .score-display {
+            font-size: 4em;
+            color: yellow;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .table {
+            color: white;
+        }
+
+        /* Jeopardy card styles */
+        .jeopardy-category {
+            font-size: 2em;
+            text-shadow: 2px 2px 0px black;
+            font-weight: bold;
+        }
+
+        .jeopardy-year {
+            font-size: 1em;
+            text-shadow: 2px 2px 0px black;
+            font-style: italic;
+        }
+
+        .jeopardy-card-header {
+            height: 7em;
+        }
+
+        .jeopardy-card-content {
+            min-height: 18em;
+            overflow-y: auto;
+        }
+
+        .jeopardy-question-text {
+            font-size: 2em;
+            padding: 0.5em;
+        }
+
+        /* Game view styles */
+        .game-form {
+            margin-bottom: 1rem;
+        }
+
+        .game-message {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-score {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Play button styles */
+        .play-button {
+            font-size: 1.45em;
+            padding: 0.875em 2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script src="app.js"></script>
+</body>
+</html>
