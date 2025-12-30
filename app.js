@@ -24,8 +24,10 @@
     let cluesAnswered = [];
     let showConfetti = false;
 
-    // API endpoint
+    // API endpoints
     const API_ENDPOINT = 'https://jservice.dannyeldridge.com/daily-clues';
+    const VALIDATE_ENDPOINT = 'https://jservice.dannyeldridge.com/api/validate-jeopardy-answer';
+    const AI_VALIDATION_TIMEOUT = 2000; // 2 seconds
 
     // DOM helpers
     function $(selector) {
@@ -46,6 +48,40 @@
             console.log('Daily clues loaded:', dailyClues);
         } catch (error) {
             console.error('Failed to fetch daily clues:', error);
+        }
+    }
+
+    // AI-powered answer validation with fallback
+    async function validateAnswerWithAI(userAnswer, correctAnswer, question) {
+        try {
+            // Create a promise that rejects after timeout
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('AI validation timeout')), AI_VALIDATION_TIMEOUT)
+            );
+
+            // Create the API call promise to our proxy
+            const aiPromise = fetch(VALIDATE_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userAnswer,
+                    correctAnswer,
+                    question
+                })
+            });
+
+            // Race between API call and timeout
+            const response = await Promise.race([aiPromise, timeoutPromise]);
+            const data = await response.json();
+
+            console.log('AI validation result:', data.isCorrect);
+            return data.isCorrect;
+        } catch (error) {
+            console.warn('⚠️ AI validation failed, falling back to string comparison:', error.message);
+            // Fallback to simple string comparison
+            return userAnswer.toLowerCase() === correctAnswer.toLowerCase();
         }
     }
 
@@ -106,9 +142,15 @@
         render();
     }
 
-    function handleGuess() {
+    async function handleGuess() {
         gameState = GAME_STATES.GUESSED;
-        if (isAnswerCorrect()) {
+        message = "Checking...";
+        render();
+
+        // Use AI validation
+        const isCorrect = await validateAnswerWithAI(guess, clue.answer, clue.question);
+
+        if (isCorrect) {
             addClueAnswered(clue.question, clue.answer, clue.category, clue.value, guess, true);
             toggleShowAnswer();
             message = "Right!";
@@ -122,7 +164,8 @@
     }
 
     function handleCorrectOverride() {
-        if (!isAnswerCorrect()) {
+        // Always allow override after guessing
+        if (cluesAnswered.length > 0 && !cluesAnswered[cluesAnswered.length - 1].isCorrect) {
             message = `My bad, you were right... $${clue.value} added to your score!`;
             setLastClueAnsweredCorrectly();
             showConfetti = true;
@@ -133,10 +176,6 @@
     function toggleShowAnswer() {
         clue.showAnswer = !clue.showAnswer;
         render();
-    }
-
-    function isAnswerCorrect() {
-        return guess.toLowerCase() === clue.answer.toLowerCase();
     }
 
     function handleSkip() {
@@ -235,7 +274,7 @@
     function startView() {
         return `
             <div class="fullscreen-background">
-                <button class='btn btn-primary btn-lg m-4 play-button' 
+                <button class='btn btn-primary btn-lg m-4 play-button'
                     onclick="handleStart()">
                     Play
                 </button>
@@ -411,10 +450,10 @@
     window.toggleShowAnswer = toggleShowAnswer;
     window.handleCorrectOverride = handleCorrectOverride;
     window.handleSkip = handleSkip;
-    
-    window.handleGuessSubmit = function(event) {
+
+    window.handleGuessSubmit = async function(event) {
         event.preventDefault();
-        handleGuess();
+        await handleGuess();
     };
 
     window.handleGuessInput = function(event) {
