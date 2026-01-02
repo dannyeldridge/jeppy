@@ -2,6 +2,7 @@
     // Game constants
     const GAME_STATES = {
         START: 'START',
+        CALENDAR: 'CALENDAR',
         QUESTION: 'QUESTION',
         GUESSED: 'GUESSED',
         SUMMARY: 'SUMMARY'
@@ -24,8 +25,13 @@
     let cluesAnswered = [];
     let showConfetti = false;
 
+    // Calendar state
+    let calendarDate = new Date();
+    let selectedDate = null;
+
     // API endpoints
-    const API_ENDPOINT = 'https://jservice.dannyeldridge.com/daily-clues';
+    const API_BASE = 'https://jservice.dannyeldridge.com';
+    const DAILY_CLUES_ENDPOINT = 'https://jservice.dannyeldridge.com/daily-clues';
     const VALIDATE_ENDPOINT = 'https://jservice.dannyeldridge.com/api/validate-jeopardy-answer';
     const AI_VALIDATION_TIMEOUT = 2000; // 2 seconds
 
@@ -40,10 +46,60 @@
         return div.innerHTML;
     }
 
+    // Helper function to format date as YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Calendar helper functions
+    function getMonthName(month) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        return months[month];
+    }
+
+    function getDaysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    function getFirstDayOfMonth(year, month) {
+        return new Date(year, month, 1).getDay();
+    }
+
+    function isSameDay(date1, date2) {
+        if (!date1 || !date2) return false;
+        return date1.getDate() === date2.getDate() &&
+               date1.getMonth() === date2.getMonth() &&
+               date1.getFullYear() === date2.getFullYear();
+    }
+
+    function isBeforeToday(date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date < today;
+    }
+
+    function isToday(date) {
+        const today = new Date();
+        return isSameDay(date, today);
+    }
+
     // Game logic
-    async function getDailyClues() {
+    async function getDailyClues(date = null) {
         try {
-            const response = await fetch(API_ENDPOINT);
+            let url;
+            if (date) {
+                // Use date-specific endpoint for previous rounds
+                const dateStr = formatDate(date);
+                url = `${API_BASE}/api/clues-by-date?date=${dateStr}`;
+            } else {
+                // Use daily-clues endpoint for today's round
+                url = DAILY_CLUES_ENDPOINT;
+            }
+            const response = await fetch(url);
             dailyClues = await response.json();
             console.log('Daily clues loaded:', dailyClues);
         } catch (error) {
@@ -186,7 +242,17 @@
         render();
     }
 
-    function handleStart() {
+    function resetGameState() {
+        clueIndex = 0;
+        cluesAnswered = [];
+        guess = '';
+        message = '';
+        showConfetti = false;
+    }
+
+    async function handleStart() {
+        resetGameState();
+        await getDailyClues(); // Fetch today's clues
         gameState = GAME_STATES.QUESTION;
         nextClue();
     }
@@ -274,10 +340,113 @@
     function startView() {
         return `
             <div class="fullscreen-background">
-                <button class='btn btn-primary btn-lg m-4 play-button'
-                    onclick="handleStart()">
-                    Play
-                </button>
+                <div class="start-buttons-container">
+                    <button class='btn btn-primary btn-lg m-4 play-button'
+                        onclick="handleStart()">
+                        Play today's round
+                    </button>
+                    <button class='btn btn-secondary btn-lg m-4 play-button'
+                        onclick="showCalendar()">
+                        Play previous round
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function calendarView() {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const daysInMonth = getDaysInMonth(year, month);
+        const firstDay = getFirstDayOfMonth(year, month);
+        const today = new Date();
+
+        const canGoPrev = !(year === 1900 && month === 0);
+        const canGoNext = !(year === today.getFullYear() && month === today.getMonth());
+
+        let daysHTML = '';
+
+        // Empty cells for days before month starts
+        for (let i = 0; i < firstDay; i++) {
+            daysHTML += '<div class="calendar-day empty"></div>';
+        }
+
+        // Days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const isPast = isBeforeToday(date) || isToday(date);
+            const isTodayDate = isToday(date);
+            const isSelected = selectedDate && isSameDay(date, selectedDate);
+
+            const classes = ['calendar-day'];
+            if (!isPast) classes.push('disabled');
+            if (isTodayDate) classes.push('today');
+            if (isSelected) classes.push('selected');
+
+            daysHTML += `
+                <div class="${classes.join(' ')}"
+                     ${isPast ? `onclick="selectCalendarDate(${year}, ${month}, ${day})"` : ''}>
+                    <span class="day-number">${day}</span>
+                    ${isTodayDate ? '<span class="today-marker">TODAY</span>' : ''}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="fullscreen-background calendar-bg">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-decorative-line top"></div>
+                        <h2 class="calendar-title">Select a Round</h2>
+                        <div class="calendar-decorative-line bottom"></div>
+                    </div>
+
+                    <div class="calendar-nav">
+                        <button class="calendar-nav-btn ${!canGoPrev ? 'disabled' : ''}"
+                                ${canGoPrev ? 'onclick="prevMonth()"' : ''}>
+                            <span class="nav-arrow">‹</span>
+                        </button>
+                        <div class="calendar-month-year">
+                            <span class="month-name">${getMonthName(month)}</span>
+                            <span class="year-name">${year}</span>
+                        </div>
+                        <button class="calendar-nav-btn ${!canGoNext ? 'disabled' : ''}"
+                                ${canGoNext ? 'onclick="nextMonth()"' : ''}>
+                            <span class="nav-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <div class="calendar-weekdays">
+                        <div class="weekday">SUN</div>
+                        <div class="weekday">MON</div>
+                        <div class="weekday">TUE</div>
+                        <div class="weekday">WED</div>
+                        <div class="weekday">THU</div>
+                        <div class="weekday">FRI</div>
+                        <div class="weekday">SAT</div>
+                    </div>
+
+                    <div class="calendar-grid">
+                        ${daysHTML}
+                    </div>
+
+                    <div class="calendar-actions">
+                        <button class='calendar-action-btn back' onclick="backToStart()">
+                            <span class="btn-icon">←</span>
+                            <span class="btn-text">Back</span>
+                        </button>
+                        <button class='calendar-action-btn play ${!selectedDate ? 'disabled' : ''}'
+                                ${selectedDate ? 'onclick="playSelectedDate()"' : ''}>
+                            <span class="btn-text">Play Round</span>
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
+
+                    <div class="calendar-corner tl"></div>
+                    <div class="calendar-corner tr"></div>
+                    <div class="calendar-corner bl"></div>
+                    <div class="calendar-corner br"></div>
+                </div>
             </div>
         `;
     }
@@ -418,6 +587,9 @@
             case GAME_STATES.START:
                 content = startView();
                 break;
+            case GAME_STATES.CALENDAR:
+                content = calendarView();
+                break;
             case GAME_STATES.SUMMARY:
                 content = summaryView();
                 break;
@@ -450,6 +622,41 @@
     window.toggleShowAnswer = toggleShowAnswer;
     window.handleCorrectOverride = handleCorrectOverride;
     window.handleSkip = handleSkip;
+
+    window.showCalendar = function() {
+        calendarDate = new Date();
+        selectedDate = null;
+        gameState = GAME_STATES.CALENDAR;
+        render();
+    };
+
+    window.backToStart = function() {
+        gameState = GAME_STATES.START;
+        render();
+    };
+
+    window.prevMonth = function() {
+        calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1);
+        render();
+    };
+
+    window.nextMonth = function() {
+        calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1);
+        render();
+    };
+
+    window.selectCalendarDate = function(year, month, day) {
+        selectedDate = new Date(year, month, day);
+        render();
+    };
+
+    window.playSelectedDate = async function() {
+        if (!selectedDate) return;
+        resetGameState();
+        await getDailyClues(selectedDate);
+        gameState = GAME_STATES.QUESTION;
+        nextClue();
+    };
 
     window.handleGuessSubmit = async function(event) {
         event.preventDefault();
