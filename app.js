@@ -341,13 +341,13 @@
         return `
             <div class="fullscreen-background">
                 <div class="start-buttons-container">
-                    <button class='btn btn-primary btn-lg m-4 play-button'
-                        onclick="handleStart()">
-                        Play today's round
-                    </button>
                     <button class='btn btn-secondary btn-lg m-4 play-button'
                         onclick="showCalendar()">
                         Play previous round
+                    </button>
+                    <button class='btn btn-primary btn-lg m-4 play-button'
+                        onclick="handleStart()">
+                        Play today's round
                     </button>
                 </div>
             </div>
