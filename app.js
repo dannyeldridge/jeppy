@@ -5,7 +5,10 @@
         CALENDAR: 'CALENDAR',
         QUESTION: 'QUESTION',
         GUESSED: 'GUESSED',
-        SUMMARY: 'SUMMARY'
+        SUMMARY: 'SUMMARY',
+        FINAL_JEOPARDY: 'FINAL_JEOPARDY',
+        FINAL_JEOPARDY_QUESTION: 'FINAL_JEOPARDY_QUESTION',
+        FINAL_JEOPARDY_GUESSED: 'FINAL_JEOPARDY_GUESSED'
     };
 
     // Game state
@@ -24,6 +27,12 @@
     let gameState = GAME_STATES.START;
     let cluesAnswered = [];
     let showConfetti = false;
+
+    // Final Jeopardy state
+    let finalJeopardyWager = 0;
+    let finalJeopardyClue = null;
+    let finalJeopardyGuess = '';
+    let finalJeopardyAnswered = null; // {isCorrect, userAnswer, wager}
 
     // Calendar state
     let calendarDate = new Date();
@@ -158,28 +167,41 @@
         }
     }
 
+    function setLastClueAnsweredWrong() {
+        if (cluesAnswered.length > 0) {
+            cluesAnswered[cluesAnswered.length - 1].isCorrect = false;
+        }
+    }
+
     function currentScore() {
         return cluesAnswered.reduce((total, clueAnswered) => {
             if (clueAnswered.isCorrect === 'skipped') {
-                return total; // Skipped clues don't affect score
+                return total;
             }
             return clueAnswered.isCorrect ? total + clueAnswered.value : total - clueAnswered.value;
         }, 0);
     }
 
     function finalScore() {
-        return currentScore();
+        let score = currentScore();
+        if (finalJeopardyAnswered) {
+            if (finalJeopardyAnswered.isCorrect === true) {
+                score += finalJeopardyAnswered.wager;
+            } else if (finalJeopardyAnswered.isCorrect === false) {
+                score -= finalJeopardyAnswered.wager;
+            }
+        }
+        return score;
     }
 
     function nextClue() {
         guess = "";
-        if (cluesAnswered.length === 6) {
-            gameState = GAME_STATES.SUMMARY;
-            render();
+        if (cluesAnswered.length === 5) {
+            // Transition to Final Jeopardy
+            startFinalJeopardy();
             return;
         }
 
-        gameState = GAME_STATES.QUESTION;
         const currentClue = dailyClues[clueIndex];
         console.log(currentClue);
 
@@ -195,6 +217,45 @@
         clueIndex++;
         message = "";
         showConfetti = false;
+        gameState = GAME_STATES.QUESTION;
+
+        render();
+    }
+
+    function startFinalJeopardy() {
+        const score = currentScore();
+
+        // If score is negative, player is eliminated
+        if (score < 0) {
+            gameState = GAME_STATES.SUMMARY;
+            render();
+            return;
+        }
+
+        // Load Final Jeopardy clue (use clue index 5, the 6th clue)
+        if (dailyClues.length > 5) {
+            const fjClue = dailyClues[5];
+            finalJeopardyClue = {
+                question: fjClue.question,
+                answer: fjClue.answer,
+                category: fjClue.category.title,
+                showAnswer: false
+            };
+        } else {
+            // Fallback if no 7th clue available
+            finalJeopardyClue = {
+                question: "No Final Jeopardy clue available",
+                answer: "N/A",
+                category: "FINAL JEOPARDY",
+                showAnswer: false
+            };
+        }
+
+        finalJeopardyWager = 0;
+        finalJeopardyGuess = '';
+        message = '';
+        showConfetti = false;
+        gameState = GAME_STATES.FINAL_JEOPARDY;
         render();
     }
 
@@ -203,7 +264,6 @@
         message = "Checking...";
         render();
 
-        // Use AI validation
         const isCorrect = await validateAnswerWithAI(guess, clue.answer, clue.question);
 
         if (isCorrect) {
@@ -220,11 +280,19 @@
     }
 
     function handleCorrectOverride() {
-        // Always allow override after guessing
         if (cluesAnswered.length > 0 && !cluesAnswered[cluesAnswered.length - 1].isCorrect) {
             message = `My bad, you were right... $${clue.value} added to your score!`;
             setLastClueAnsweredCorrectly();
             showConfetti = true;
+            render();
+        }
+    }
+
+    function handleWrongOverride() {
+        if (cluesAnswered.length > 0 && cluesAnswered[cluesAnswered.length - 1].isCorrect === true) {
+            message = `Oops, you were wrong... $${clue.value} removed from your score.`;
+            setLastClueAnsweredWrong();
+            showConfetti = false;
             render();
         }
     }
@@ -248,6 +316,10 @@
         guess = '';
         message = '';
         showConfetti = false;
+        finalJeopardyWager = 0;
+        finalJeopardyClue = null;
+        finalJeopardyGuess = '';
+        finalJeopardyAnswered = null;
     }
 
     async function handleStart() {
@@ -451,6 +523,119 @@
         `;
     }
 
+    function getFinalJeopardyMaxWager() {
+        const score = currentScore();
+        return Math.max(score, 0);
+    }
+
+    function finalJeopardyView() {
+        const score = currentScore();
+        const maxWager = getFinalJeopardyMaxWager();
+        const isValidWager = finalJeopardyWager >= 0 && finalJeopardyWager <= maxWager;
+
+        return `
+            <div class="final-jeopardy-container">
+                <div class="final-jeopardy-header">
+                    <h1 class="final-jeopardy-title">FINAL JEOPARDY!</h1>
+                </div>
+                <div class="final-jeopardy-info">
+                    <div class="final-jeopardy-category">
+                        Category: <strong>${escapeHtml(finalJeopardyClue.category.toUpperCase())}</strong>
+                    </div>
+                    <div class="final-jeopardy-score">
+                        Your current score: <strong>$${score}</strong>
+                    </div>
+                    <div class="final-jeopardy-wager-section">
+                        <label for="fj-wager-input" class="wager-label">
+                            Enter your wager (up to $${maxWager}):
+                        </label>
+                        <div class="wager-input-container">
+                            <span class="wager-dollar">$</span>
+                            <input
+                                type="number"
+                                id="fj-wager-input"
+                                class="form-control wager-input"
+                                value="${finalJeopardyWager}"
+                                min="0"
+                                max="${maxWager}"
+                                oninput="handleFinalJeopardyWagerInput(event)"
+                                onfocus="this.select()"
+                            />
+                        </div>
+                        ${!isValidWager ? `<div class="wager-error">Wager must be between $0 and $${maxWager}</div>` : ''}
+                    </div>
+                    <button
+                        class="btn btn-primary btn-lg lock-wager-btn"
+                        onclick="handleLockFinalJeopardyWager()"
+                        ${!isValidWager ? 'disabled' : ''}
+                    >
+                        Lock In Wager
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function finalJeopardyQuestionView() {
+        return `
+            <div class="final-jeopardy-question-container">
+                <div class="Jeopardy-box flex-box-column jeopardy-card-header">
+                    <div class="jeopardy-category">
+                        FINAL JEOPARDY - ${escapeHtml(finalJeopardyClue.category.toUpperCase())}
+                    </div>
+                </div>
+                <div class="Jeopardy-box flex-box-column jeopardy-card-content">
+                    <div class="jeopardy-question-text">${escapeHtml(finalJeopardyClue.showAnswer ? finalJeopardyClue.answer : finalJeopardyClue.question)}</div>
+                </div>
+                <div class='form-group form-inline mt-4 game-form'>
+                    <form onsubmit="handleFinalJeopardyGuessSubmit(event)">
+                        <input
+                            autocomplete="off"
+                            ${gameState === GAME_STATES.FINAL_JEOPARDY_GUESSED ? 'disabled' : ''}
+                            class='form-control'
+                            value="${escapeHtml(finalJeopardyGuess)}"
+                            type="text"
+                            id="fj-guess-input"
+                            oninput="handleFinalJeopardyGuessInput(event)" />
+                        <button
+                            ${gameState === GAME_STATES.FINAL_JEOPARDY_GUESSED ? 'disabled' : ''}
+                            class='btn btn-primary mx-2'
+                            type="submit">
+                            Guess
+                        </button>
+                        ${gameState === GAME_STATES.FINAL_JEOPARDY_GUESSED ?
+                            `<button class='btn btn-success' type="button" onclick="finishGame()">See Results</button>` :
+                            ''
+                        }
+                    </form>
+                </div>
+                <div>
+                    ${gameState === GAME_STATES.FINAL_JEOPARDY_GUESSED ? `
+                        <button class='btn btn-outline-danger btn-sm mr-2' type="button" onclick="toggleFinalJeopardyAnswer()">
+                            ${!finalJeopardyClue.showAnswer ? "Show Answer" : "Show Question"}
+                        </button>
+                    ` : ''}
+                    <span>
+                        ${gameState === GAME_STATES.FINAL_JEOPARDY_GUESSED && finalJeopardyAnswered ?
+                            (finalJeopardyAnswered.isCorrect
+                                ? `<button onclick="handleFinalJeopardyWrongOverride()" class='btn btn-outline-secondary btn-sm'>I was wrong</button>`
+                                : `<button onclick="handleFinalJeopardyCorrectOverride()" class='btn btn-outline-secondary btn-sm'>I was right!</button>`
+                            ) : ''
+                        }
+                    </span>
+                </div>
+                <div class="game-message">
+                    <p class='mt-4 h4'>${escapeHtml(message)}</p>
+                </div>
+                <div class="game-score">
+                    <p class='mt-4 h4'>
+                        Wagered: $${finalJeopardyWager}
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+
     function jeopardyCard() {
         return `
             <div>
@@ -500,8 +685,8 @@
                             `<button class='btn btn-secondary mx-2' type="button" onclick="handleSkip()">Skip</button>` : 
                             ''
                         }
-                        ${gameState === GAME_STATES.GUESSED ? 
-                            `<button class='btn btn-success' type="button" onclick="nextClue()">Next Clue</button>` : 
+                        ${gameState === GAME_STATES.GUESSED ?
+                            `<button class='btn btn-success' type="button" onclick="nextClue()">${clueIndex === 5 ? 'Final Jeopardy' : 'Next Clue'}</button>` :
                             ''
                         }
                     </form>
@@ -513,9 +698,11 @@
                         </button>
                     ` : ''}
                     <span>
-                        ${gameState !== GAME_STATES.QUESTION && message !== "Skipped!" ? 
-                            `<button onclick="handleCorrectOverride()" class='btn btn-outline-secondary btn-sm'>I was right!</button>` : 
-                            ''
+                        ${gameState === GAME_STATES.GUESSED && message !== "Skipped!" && cluesAnswered.length > 0 ?
+                            (cluesAnswered[cluesAnswered.length - 1].isCorrect === true
+                                ? `<button onclick="handleWrongOverride()" class='btn btn-outline-secondary btn-sm'>I was wrong</button>`
+                                : `<button onclick="handleCorrectOverride()" class='btn btn-outline-secondary btn-sm'>I was right!</button>`
+                            ) : ''
                         }
                     </span>
                 </div>
@@ -535,21 +722,30 @@
 
     function summaryView() {
         const correctAnswers = cluesAnswered.filter(ca => ca.isCorrect === true).length;
-        
+        const score = currentScore();
+        const wasEliminated = score < 0 && !finalJeopardyAnswered;
+        const total = finalScore();
+        const isPerfect = correctAnswers === 5 && finalJeopardyAnswered && finalJeopardyAnswered.isCorrect === true;
+
         return `
             <div class="container flex-box-column">
                 <p>Summary:</p>
                 <p>
-                    You answered ${correctAnswers} correctly, out of today's ${cluesAnswered.length}
+                    You answered ${correctAnswers} correctly, out of ${cluesAnswered.length} clues
                 </p>
-                ${correctAnswers === 6 ? `
+                ${wasEliminated ? `
+                    <p class="eliminated-message">
+                        You had a negative score ($${score}) going into Final Jeopardy and were eliminated!
+                    </p>
+                ` : ''}
+                ${isPerfect ? `
                     <p>
                         <img src="img/greg.png" alt="greg" class="greg-image" />
                         <p>Greg says: "You did it! You won Jeopardy!"</p>
                     </p>
                 ` : ''}
                 <p>
-                    Today you won $${finalScore()}
+                    Final score: $${total}
                 </p>
                 <table class="table table-dark table-bordered table-hover">
                     <thead>
@@ -559,7 +755,7 @@
                             <th scope="col">Answer</th>
                             <th scope="col">Your Answer</th>
                             <th scope="col">Result</th>
-                            <th scope="col">Clue Value</th>
+                            <th scope="col">Value</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -570,9 +766,19 @@
                                 <td>${escapeHtml(clueAnswered.answer)}</td>
                                 <td>${escapeHtml(clueAnswered.userAnswer)}</td>
                                 <td>${clueAnswered.isCorrect === true ? "✓" : (clueAnswered.isCorrect === 'skipped' ? "−" : "✗")}</td>
-                                <td>${clueAnswered.value}</td>
+                                <td>$${clueAnswered.value}</td>
                             </tr>
                         `).join('')}
+                        ${finalJeopardyAnswered ? `
+                            <tr class="final-jeopardy-row">
+                                <th scope="row">FJ</th>
+                                <td>${escapeHtml(finalJeopardyClue.question)}</td>
+                                <td>${escapeHtml(finalJeopardyClue.answer)}</td>
+                                <td>${escapeHtml(finalJeopardyAnswered.userAnswer)}</td>
+                                <td>${finalJeopardyAnswered.isCorrect === true ? "✓" : "✗"}</td>
+                                <td><span class="final-jeopardy-badge">FJ</span> $${finalJeopardyAnswered.wager}</td>
+                            </tr>
+                        ` : ''}
                     </tbody>
                 </table>
             </div>
@@ -589,6 +795,13 @@
                 break;
             case GAME_STATES.CALENDAR:
                 content = calendarView();
+                break;
+            case GAME_STATES.FINAL_JEOPARDY:
+                content = finalJeopardyView();
+                break;
+            case GAME_STATES.FINAL_JEOPARDY_QUESTION:
+            case GAME_STATES.FINAL_JEOPARDY_GUESSED:
+                content = finalJeopardyQuestionView();
                 break;
             case GAME_STATES.SUMMARY:
                 content = summaryView();
@@ -614,6 +827,14 @@
                 if (input) input.focus();
             }, 100);
         }
+
+        // Auto-focus Final Jeopardy input
+        if (gameState === GAME_STATES.FINAL_JEOPARDY_QUESTION) {
+            setTimeout(() => {
+                const input = $('#fj-guess-input');
+                if (input) input.focus();
+            }, 100);
+        }
     }
 
     // Event handlers (need to be global for onclick)
@@ -621,7 +842,99 @@
     window.nextClue = nextClue;
     window.toggleShowAnswer = toggleShowAnswer;
     window.handleCorrectOverride = handleCorrectOverride;
+    window.handleWrongOverride = handleWrongOverride;
     window.handleSkip = handleSkip;
+
+    window.handleFinalJeopardyWagerInput = function(event) {
+        const value = parseInt(event.target.value, 10);
+        finalJeopardyWager = isNaN(value) ? 0 : value;
+
+        const maxWager = getFinalJeopardyMaxWager();
+        const isValidWager = finalJeopardyWager >= 0 && finalJeopardyWager <= maxWager;
+        const lockBtn = document.querySelector('.lock-wager-btn');
+        const errorDiv = document.querySelector('.wager-error');
+
+        if (lockBtn) {
+            lockBtn.disabled = !isValidWager;
+        }
+
+        const wagerSection = document.querySelector('.final-jeopardy-wager-section');
+        if (!isValidWager) {
+            if (!errorDiv && wagerSection) {
+                const newError = document.createElement('div');
+                newError.className = 'wager-error';
+                newError.textContent = `Wager must be between $0 and $${maxWager}`;
+                wagerSection.appendChild(newError);
+            }
+        } else if (errorDiv) {
+            errorDiv.remove();
+        }
+    };
+
+    window.handleLockFinalJeopardyWager = function() {
+        const maxWager = getFinalJeopardyMaxWager();
+        if (finalJeopardyWager >= 0 && finalJeopardyWager <= maxWager) {
+            gameState = GAME_STATES.FINAL_JEOPARDY_QUESTION;
+            render();
+        }
+    };
+
+    window.handleFinalJeopardyGuessInput = function(event) {
+        finalJeopardyGuess = event.target.value;
+    };
+
+    window.handleFinalJeopardyGuessSubmit = async function(event) {
+        event.preventDefault();
+        gameState = GAME_STATES.FINAL_JEOPARDY_GUESSED;
+        message = "Checking...";
+        render();
+
+        const isCorrect = await validateAnswerWithAI(finalJeopardyGuess, finalJeopardyClue.answer, finalJeopardyClue.question);
+
+        finalJeopardyAnswered = {
+            isCorrect: isCorrect,
+            userAnswer: finalJeopardyGuess,
+            wager: finalJeopardyWager
+        };
+
+        finalJeopardyClue.showAnswer = true;
+
+        if (isCorrect) {
+            message = `Right! You won $${finalJeopardyWager}!`;
+            showConfetti = true;
+        } else {
+            message = `Wrong! You lost $${finalJeopardyWager}!`;
+        }
+        render();
+    };
+
+    window.toggleFinalJeopardyAnswer = function() {
+        finalJeopardyClue.showAnswer = !finalJeopardyClue.showAnswer;
+        render();
+    };
+
+    window.handleFinalJeopardyCorrectOverride = function() {
+        if (finalJeopardyAnswered && finalJeopardyAnswered.isCorrect !== true) {
+            finalJeopardyAnswered.isCorrect = true;
+            message = `My bad, you were right... $${finalJeopardyWager} added to your score!`;
+            showConfetti = true;
+            render();
+        }
+    };
+
+    window.handleFinalJeopardyWrongOverride = function() {
+        if (finalJeopardyAnswered && finalJeopardyAnswered.isCorrect) {
+            finalJeopardyAnswered.isCorrect = false;
+            message = `Oops, you were wrong... $${finalJeopardyWager} removed from your score.`;
+            showConfetti = false;
+            render();
+        }
+    };
+
+    window.finishGame = function() {
+        gameState = GAME_STATES.SUMMARY;
+        render();
+    };
 
     window.showCalendar = function() {
         calendarDate = new Date();

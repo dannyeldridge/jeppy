@@ -1079,6 +1079,236 @@ body, html {
     z-index: 1;
 }
 
+/* Daily Double styles */
+.daily-double-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+    animation: dailyDoubleEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dailyDoubleEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.daily-double-image-container {
+    position: relative;
+    animation: dailyDoublePulse 2s ease-in-out infinite;
+}
+
+@keyframes dailyDoublePulse {
+    0%, 100% {
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.8));
+    }
+}
+
+.daily-double-image {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 3px solid var(--color-gold);
+    box-shadow: var(--shadow-strong);
+}
+
+.daily-double-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.daily-double-category {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8em;
+    color: var(--color-white);
+}
+
+.daily-double-category strong {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.daily-double-score {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4em;
+    color: var(--color-text-muted);
+}
+
+.daily-double-score strong {
+    color: var(--color-gold-bright);
+}
+
+.daily-double-wager-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.wager-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1em;
+    color: var(--color-white);
+}
+
+.wager-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.wager-dollar {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--color-gold-bright);
+}
+
+.wager-input {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2em;
+    font-weight: 700;
+    width: 180px;
+    padding: 0.4em 0.8em;
+    background: rgba(10, 14, 39, 0.8);
+    border: 2px solid var(--color-gold);
+    border-radius: 4px;
+    color: var(--color-gold-bright);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.wager-input:focus {
+    background: rgba(10, 14, 39, 0.95);
+    border-color: var(--color-gold-bright);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+/* Hide number input spinners */
+.wager-input::-webkit-outer-spin-button,
+.wager-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.wager-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.wager-error {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9em;
+    color: #e74c3c;
+    margin-top: 0.5rem;
+}
+
+.lock-wager-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4em;
+    font-weight: 700;
+    padding: 0.75em 2em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.lock-wager-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Summary table Daily Double styling */
+.daily-double-row {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), transparent) !important;
+}
+
+.daily-double-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--color-gold) 0%, #c9a134 100%);
+    color: var(--color-deep-navy);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    margin-right: 0.5em;
+    letter-spacing: 0.05em;
+}
+
+/* Mobile Daily Double */
+@media (max-width: 768px) {
+    .daily-double-container {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .daily-double-image {
+        max-width: 280px;
+    }
+
+    .daily-double-category {
+        font-size: 1.4em;
+    }
+
+    .daily-double-score {
+        font-size: 1.2em;
+    }
+
+    .wager-label {
+        font-size: 1em;
+    }
+
+    .wager-dollar {
+        font-size: 2em;
+    }
+
+    .wager-input {
+        font-size: 1.6em;
+        width: 140px;
+    }
+
+    .lock-wager-btn {
+        font-size: 1.2em;
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 375px) {
+    .daily-double-image {
+        max-width: 220px;
+    }
+
+    .daily-double-category {
+        font-size: 1.2em;
+    }
+
+    .daily-double-score {
+        font-size: 1em;
+    }
+
+    .lock-wager-btn {
+        font-size: 1em;
+    }
+}
+
 /* Touch-friendly button spacing */
 @media (hover: none) and (pointer: coarse) {
     .btn {
@@ -1192,5 +1422,169 @@ body, html {
     .calendar-action-btn {
         font-size: 0.8em;
         padding: 0.75rem 0.75rem;
+    }
+}
+
+/* Final Jeopardy styles */
+.final-jeopardy-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+    animation: finalJeopardyEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes finalJeopardyEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.final-jeopardy-header {
+    text-align: center;
+    position: relative;
+    animation: finalJeopardyPulse 2s ease-in-out infinite;
+}
+
+@keyframes finalJeopardyPulse {
+    0%, 100% {
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 40px rgba(212, 175, 55, 0.8));
+    }
+}
+
+.final-jeopardy-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 4em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-bright) 50%, var(--color-gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+    animation: shimmerText 3s ease-in-out infinite;
+}
+
+.final-jeopardy-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.final-jeopardy-category {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8em;
+    color: var(--color-white);
+}
+
+.final-jeopardy-category strong {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.final-jeopardy-score {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.4em;
+    color: var(--color-text-muted);
+}
+
+.final-jeopardy-score strong {
+    color: var(--color-gold-bright);
+}
+
+.final-jeopardy-wager-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.final-jeopardy-question-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* Summary table Final Jeopardy styling */
+.final-jeopardy-row {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1)) !important;
+}
+
+.final-jeopardy-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--color-gold) 0%, #c9a134 100%);
+    color: var(--color-deep-navy);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    margin-right: 0.5em;
+    letter-spacing: 0.05em;
+}
+
+/* Eliminated message */
+.eliminated-message {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4em;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
+
+/* Mobile Final Jeopardy */
+@media (max-width: 768px) {
+    .final-jeopardy-container {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .final-jeopardy-title {
+        font-size: 2.5em;
+    }
+
+    .final-jeopardy-category {
+        font-size: 1.4em;
+    }
+
+    .final-jeopardy-score {
+        font-size: 1.2em;
+    }
+
+    .final-jeopardy-question-container {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 375px) {
+    .final-jeopardy-title {
+        font-size: 2em;
+    }
+
+    .final-jeopardy-category {
+        font-size: 1.2em;
+    }
+
+    .final-jeopardy-score {
+        font-size: 1em;
     }
 }
